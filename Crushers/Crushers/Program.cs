@@ -10,18 +10,20 @@ namespace Crushers
     {
         static void Main(string[] args)
         {
-            var result = System.Windows.Forms.MessageBox.Show("フルスクリーンで起動しますか？", "Crushers", System.Windows.Forms.MessageBoxButtons.YesNo);
-            var option = new asd.EngineOption();
-            option.IsFullScreen = result == System.Windows.Forms.DialogResult.Yes;
+            var result = System.Windows.Forms.MessageBox.Show("フルスクリーンで起動しますか？", Config.Window.Title, System.Windows.Forms.MessageBoxButtons.YesNo);
+            var option = new asd.EngineOption
+            {
+                IsFullScreen = result == System.Windows.Forms.DialogResult.Yes
+            };
 
-            asd.Engine.Initialize("Crushers", 800, 800, option);
+            asd.Engine.Initialize(Config.Window.Title, Config.Window.Width, Config.Window.Height, option);
 
             while (asd.Engine.DoEvents())
             {
                 asd.Engine.Update();
             }
-            asd.Engine.Terminate();
 
+            asd.Engine.Terminate();
         }
     }
 }
