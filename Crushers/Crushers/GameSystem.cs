@@ -6,10 +6,16 @@ using System.Threading.Tasks;
 
 namespace Crushers
 {
-    public abstract class GameObject : asd.TextureObject2D
+    class GameSystem
     {
-        public const int Width = 20;
-        public const int Height = 20;
+        public GameSystem()
+        {
 
+        }
+
+        public static void Play()
+        {
+
+        }
     }
 }

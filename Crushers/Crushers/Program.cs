@@ -17,6 +17,9 @@ namespace Crushers
             };
 
             asd.Engine.Initialize(Config.Window.Title, Config.Window.Width, Config.Window.Height, option);
+            asd.Engine.File.AddRootDirectory("Resources/");
+
+            asd.Engine.ChangeSceneWithTransition(new Scenes.GameScene(), new asd.TransitionFade(1.0f, 1.0f));
 
             while (asd.Engine.DoEvents())
             {
