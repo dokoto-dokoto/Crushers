@@ -16,6 +16,10 @@ namespace Crushers.Objects
 
         public Player()
         {
+            Width = Config.PlayerConfig.Width;
+            Height = Config.PlayerConfig.Height;
+            Size = Config.PlayerConfig.Size;
+
             Texture = asd.Engine.Graphics.CreateTexture2D("baby_boy01_smile.png");
             int x = Texture.Size.X;
             int y = Texture.Size.Y;
@@ -24,7 +28,10 @@ namespace Crushers.Objects
 
         protected override void OnUpdate()
         {
-
+            var vel = Velocity;
+            vel.X = asd.MathHelper.Clamp(vel.X, 2, -2);
+            vel.Y = asd.MathHelper.Clamp(vel.Y, 2, -20);
+            Velocity = vel;
         }
     }
 }

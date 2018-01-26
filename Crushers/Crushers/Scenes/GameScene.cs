@@ -15,6 +15,7 @@ namespace Crushers.Scenes
         private asd.CameraObject2D camera;
 
         public Objects.Player player;
+        private List<Objects.Block> blockList;
 
         private const int offset = 15;
 
@@ -43,11 +44,14 @@ namespace Crushers.Scenes
             player.Position = new asd.Vector2DF(250, 375);
             layer.AddObject(player);
 
+            blockList = new List<Objects.Block>();
             for (int i = 0; i < 16; i++)
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    layer.AddObject(new Objects.Block(i / 4) { Position = new asd.Vector2DF(200 + 25 * i, 400 + 25 * j) });
+                    var b = new Objects.Block(i / 4) { Position = new asd.Vector2DF(600 - 25 * i, 400 + 25 * j) };
+                    blockList.Add(b);
+                    layer.AddObject(b);
                 }
             }
 
@@ -68,79 +72,8 @@ namespace Crushers.Scenes
             uiLayer.AddObject(ui_p2);
         }
 
-        /// <summary>
-        /// if the line from p0 to p1 intersects block's Area, fix the Position p1 with the intersection.
-        /// </summary>
-        /// <param name="p0"></param>
-        /// <param name="p1"></param>
-        /// <param name="block"></param>
-        /// <returns></returns>
-        private asd.Vector2DF FixedPosition(asd.Vector2DF p0, asd.Vector2DF p1, Objects.Block block)
-        {
-            var p = p1;
-            // With Top
-            if (p0.Y <= block.Area.T_y && block.Area.T_y < p1.Y)
-            {
-                float t = (block.Area.T_y - p0.Y) / (p1.Y - p0.Y);
-                float i_x = p0.X + t * (p1.X - p0.X);
-                if (block.Area.TopSide.StartingPosition.X < i_x && i_x < block.Area.TopSide.EndingPosition.X)
-                {
-                    p.X = i_x;
-                    p.Y = block.Area.T_y;
-                    player.isGround = true;
-                    player.SetVelocityY(0);
-                    return p;
-                }
-            }
-
-            // With Bottom
-            if (p0.Y >= block.Area.B_y && block.Area.B_y > p1.Y)
-            {
-                float t = (block.Area.B_y - p0.Y) / (p1.Y - p0.Y);
-                float i_x = p0.X + t * (p1.X - p0.X);
-                if (block.Area.BottomSide.StartingPosition.X < i_x && i_x < block.Area.BottomSide.EndingPosition.X)
-                {
-                    p.X = i_x;
-                    p.Y = block.Area.B_y;
-                    player.SetVelocityY(0);
-                    return p;
-                }
-            }
-
-            // With Left
-            if (p0.X <= block.Area.L_x && block.Area.L_x < p1.X)
-            {
-                float t = (block.Area.L_x - p0.X) / (p1.X - p0.X);
-                float i_y = p1.Y + t * (p1.Y - p0.Y);
-                if (block.Area.LeftSide.StartingPosition.Y < i_y && i_y < block.Area.LeftSide.EndingPosition.Y)
-                {
-                    p.X = block.Area.L_x;
-                    p.Y = i_y;
-                    player.SetVelocityX(0);
-                    return p;
-                }
-            }
-
-            // With Right
-            if (p0.X >= block.Area.R_x && block.Area.R_x > p1.X)
-            {
-                float t = (block.Area.R_x - p0.X) / (p1.X - p0.X);
-                float i_y = p1.Y + t * (p1.Y - p0.Y);
-                if (block.Area.RightSide.StartingPosition.Y < i_y && i_y < block.Area.RightSide.EndingPosition.Y)
-                {
-                    p.X = block.Area.R_x;
-                    p.Y = i_y;
-                    player.SetVelocityX(0);
-                    return p;
-                }
-            }
-
-            return p;
-        }
-
         protected override void OnUpdated()
         {
-            var playerPos = player.Position + player.Velocity;
             var key_L = asd.Engine.Keyboard.GetKeyState(asd.Keys.Left);
             var key_R = asd.Engine.Keyboard.GetKeyState(asd.Keys.Right);
             var key_U = asd.Engine.Keyboard.GetKeyState(asd.Keys.Up);
@@ -148,87 +81,41 @@ namespace Crushers.Scenes
             var key_Z = asd.Engine.Keyboard.GetKeyState(asd.Keys.Z);
             var key_Sp = asd.Engine.Keyboard.GetKeyState(asd.Keys.Space);
 
+            // 仮座標
+            var playerPos = player.Position;
+
+            // 左右移動
             if (key_L == asd.KeyState.Hold)
             {
-                playerPos += new asd.Vector2DF(-2, 0);
-                if (key_Z == asd.KeyState.Push)
-                {
-                    foreach (var obj in layer.Objects.Where(
-                        o => o is Objects.Block
-                        && player.Position.X - offset > o.Position.X
-                        && (player.Position - o.Position).SquaredLength < 1.1f * Objects.GameObject.Width * Objects.GameObject.Width))
-                    {
-                        obj.Dispose();
-                    }
-                }
+                player.SetVelocityX(-2);
             }
-
             if (key_R == asd.KeyState.Hold)
             {
-                playerPos += new asd.Vector2DF(2, 0);
-                if (key_Z == asd.KeyState.Push)
-                {
-                    foreach (var obj in layer.Objects.Where(
-                        o => o is Objects.Block
-                        && player.Position.X + offset < o.Position.X
-                        && (player.Position - o.Position).SquaredLength < 1.1f * Objects.GameObject.Width * Objects.GameObject.Width))
-                    {
-                        obj.Dispose();
-                    }
-                }
+                player.SetVelocityX(2);
             }
 
-            if (key_U == asd.KeyState.Hold)
+            // ジャンプ
+            if (key_Sp == asd.KeyState.Push)
             {
-                playerPos += new asd.Vector2DF(0, -2);
-                if (key_Z == asd.KeyState.Push)
-                {
-                    foreach (var obj in layer.Objects.Where(
-                        o => o is Objects.Block
-                        && player.Position.Y - offset > o.Position.Y
-                        && (player.Position - o.Position).SquaredLength < 1.1f * Objects.GameObject.Height * Objects.GameObject.Height))
-                    {
-                        obj.Dispose();
-                    }
-                }
-            }
-
-            if (key_D == asd.KeyState.Hold)
-            {
-                playerPos += new asd.Vector2DF(0, 2);
-                if (key_Z == asd.KeyState.Push)
-                {
-                    foreach (var obj in layer.Objects.Where(
-                        o => o is Objects.Block
-                        && player.Position.Y + offset < o.Position.Y
-                        && (player.Position - o.Position).SquaredLength < 1.1f * Objects.GameObject.Height * Objects.GameObject.Height))
-                    {
-                        obj.Dispose();
-                    }
-                }
+                player.SetVelocityY(-7.5f);
             }
 
             player.Gravity();
             playerPos += player.Velocity;
 
-            if (playerPos.X < Config.GameWindow.X)
+            // 掘削
+            if (key_Z == asd.KeyState.Push)
             {
-                playerPos.X = Config.GameWindow.X;
-            }
-            else if (playerPos.X + Objects.GameObject.Width > Config.GameWindow.X + Config.GameWindow.Width)
-            {
-                playerPos.X = Config.GameWindow.X + Config.GameWindow.Width - Objects.GameObject.Width;
+                foreach (var obj in blockList.Where(o=>(player.Position - o.Position).SquaredLength < Config.BlockConfig.Size.SquaredLength))
+                {
+
+                }
             }
 
-            if (playerPos.Y + Objects.GameObject.Height > Config.GameWindow.Height)
+            // 当たり判定
+            foreach (var obj in blockList.Where(o => (player.Position - o.Position).SquaredLength < Config.BlockConfig.Size.SquaredLength))
             {
-                playerPos.Y = Config.GameWindow.Height - Objects.GameObject.Height;
-            }
-
-            foreach (var obj in layer.Objects.Where(o => o is Objects.Block && (player.Position - o.Position).SquaredLength <= (player.Size.To2DF()).SquaredLength))
-            {
-                var o = obj as Objects.Block;
-                playerPos = FixedPosition(player.Position, playerPos, o);
+                playerPos = player.CollideUpdate(obj);
             }
             player.Position = playerPos;
         }

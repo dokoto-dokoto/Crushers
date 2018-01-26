@@ -41,6 +41,20 @@ namespace Crushers
             public static asd.Vector2DI Size { get; } = new asd.Vector2DI(Width, Height);
         }
 
+        public static class PlayerConfig
+        {
+            public const int Width = 24;
+            public const int Height = 24;
+            public static asd.Vector2DF Size { get; } = new asd.Vector2DF(Width, Height);
+        }
+
+        public static class BlockConfig
+        {
+            public const int Width = 25;
+            public const int Height = 25;
+            public static asd.Vector2DF Size { get; } = new asd.Vector2DF(Width, Height);
+        }
+
         public static bool isQuit = false;
     }
 }

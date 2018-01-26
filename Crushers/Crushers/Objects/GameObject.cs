@@ -8,9 +8,9 @@ namespace Crushers.Objects
 {
     public class GameObject : asd.TextureObject2D
     {
-        public const int Width = 25;
-        public const int Height = 25;
-        public asd.Vector2DI Size { get; } = new asd.Vector2DI(Width, Height);
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public asd.Vector2DF Size { get; set; }
 
         public asd.Vector2DF Acceleration { get; set; } = new asd.Vector2DF(0, 0);
         public asd.Vector2DF Velocity { get; set; } = new asd.Vector2DF(0, 0);
@@ -41,56 +41,67 @@ namespace Crushers.Objects
             Velocity += new asd.Vector2DF(0, 0.5f);
         }
 
-        public struct AreaRect
+        // GameObject同士の衝突時処理
+        public asd.Vector2DF CollideUpdate(GameObject gameObj)
         {
-            public asd.LineShape TopSide;
-            public int T_y;
-            public asd.LineShape BottomSide;
-            public int B_y;
-            public asd.LineShape LeftSide;
-            public int L_x;
-            public asd.LineShape RightSide;
-            public int R_x;
-        }
-        public AreaRect Area { get; set; }
+            // 衝突する範囲
+            var colArea_U = gameObj.Position.Y - this.Height;
+            var colArea_L = gameObj.Position.X - this.Width;
+            var colArea_R = gameObj.Position.X + gameObj.Width;
+            var colArea_D = gameObj.Position.Y + gameObj.Height;
 
-        protected override void OnAdded()
-        {
-            Area = new AreaRect
-            {
-                TopSide = new asd.LineShape
-                {
-                    StartingPosition = Position - Size.To2DF(),
-                    EndingPosition = new asd.Vector2DF(Position.X + Width, Position.Y - Height)
-                },
-                BottomSide = new asd.LineShape
-                {
-                    StartingPosition = new asd.Vector2DF(Position.X - Width, Position.Y + Height),
-                    EndingPosition = Position + Size.To2DF()
-                },
-                LeftSide = new asd.LineShape(),
-                RightSide = new asd.LineShape(),
-                T_y = (int)Position.Y - Height,
-                B_y = (int)Position.Y + Height,
-                L_x = (int)Position.X - Width,
-                R_x = (int)Position.X + Width
-            };
-            Area.LeftSide.StartingPosition = Area.TopSide.StartingPosition;            
-            Area.LeftSide.EndingPosition = Area.BottomSide.StartingPosition;
-            Area.RightSide.StartingPosition = Area.TopSide.EndingPosition;
-            Area.RightSide.EndingPosition = Area.BottomSide.EndingPosition;
-        }    
+            // 次フレームのオブジェクトの位置
+            var nextPos = this.Position + this.Velocity;
 
-        // GameObject同士の衝突を想定
-        public bool Inside(asd.Vector2DF point)
-        {
-            if (point.X > this.Position.X - Width && point.X < this.Position.X + Width
-                && point.Y > this.Position.Y - Height && point.Y < this.Position.Y + Height)
+            // 衝突処理
+            // 上辺との衝突処理
+            if (this.Position.Y <= colArea_U && colArea_U < nextPos.Y)
             {
-                return true;
+                var t = (colArea_U - this.Position.Y) / (nextPos.Y - this.Position.Y);
+                var i_x = this.Position.X + t * (nextPos.X - this.Position.X);
+                if (colArea_L <= i_x && i_x <= colArea_R)
+                {
+                    nextPos.Y = colArea_U;
+                    SetVelocityY(0);
+                    return nextPos;
+                }
             }
-
-            return false;
+            // 左辺との衝突処理
+            if (this.Position.X <= colArea_L && colArea_L <= nextPos.X)
+            {
+                var t = (colArea_L - this.Position.X) / (nextPos.X - this.Position.X);
+                var i_y = this.Position.Y + t * (nextPos.Y - this.Position.Y);
+                if (colArea_U <= i_y && i_y <= colArea_D)
+                {
+                    nextPos.X = colArea_L;
+                    SetVelocityX(0);
+                    return nextPos;
+                }
+            }
+            // 右辺との衝突処理
+            if (this.Position.X >= colArea_R && colArea_R >= nextPos.X)
+            {
+                var t = (colArea_R - this.Position.X) / (nextPos.X - this.Position.X);
+                var i_y = this.Position.Y + t * (nextPos.Y - this.Position.Y);
+                if (colArea_U <= i_y && i_y <= colArea_D)
+                {
+                    nextPos.X = colArea_R;
+                    SetVelocityX(0);
+                    return nextPos;
+                }
+            }
+            // 下辺との衝突処理
+            if (this.Position.Y >= colArea_D && colArea_D >= nextPos.Y)
+            {
+                var t = (colArea_D - this.Position.Y) / (nextPos.Y - this.Position.Y);
+                var i_x = this.Position.X + t * (nextPos.X - this.Position.X);
+                if (colArea_L <= i_x && i_x <= colArea_R)
+                {
+                    nextPos.Y = colArea_D;
+                    SetVelocityY(0);
+                }
+            }
+            return nextPos;
         }
     }
 }
